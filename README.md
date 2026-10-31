@@ -157,6 +157,13 @@ Detailed guides: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (what actually r
 
 CryptAI is provided for research and educational purposes. Automated trading of leveraged crypto derivatives can lead to significant financial loss. Use testnet/paper mode unless you fully understand the risks, and never trade capital you can't afford to lose. The author accepts no liability for financial losses. This is not financial advice.
 
+## Credits
+
+This repository is based on [CryptAI by Anil Sahith](https://github.com/sahit1011/CryptAI), used under the MIT License. The original commit history is preserved. Changes made in this copy:
+
+- **Kline validation fix**: `KlineData` now checks open/close against high/low after all fields are parsed. Previously a candle whose close was above its high or below its low was accepted.
+- **Validator tests**: added `tests/unit/test_data_validators.py`.
+
 ## License
 
 Released under the [MIT License](crypto-trading-agent/LICENSE).
