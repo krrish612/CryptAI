@@ -19,31 +19,25 @@ class KlineData(BaseModel):
     volume: float = Field(..., ge=0, description="Volume")
     is_closed: bool = Field(..., description="Is candle closed")
     
-    @validator('high')
-    def high_gte_low(cls, v, values):
-        """Ensure high >= low"""
-        if 'low' in values and v < values['low']:
-            raise ValueError(f'High ({v}) must be >= Low ({values["low"]})')
-        return v
-    
-    @validator('high')
-    def high_gte_open_close(cls, v, values):
-        """Ensure high >= open and close"""
-        if 'open' in values and v < values['open']:
-            raise ValueError(f'High ({v}) must be >= Open ({values["open"]})')
-        if 'close' in values and v < values['close']:
-            raise ValueError(f'High ({v}) must be >= Close ({values["close"]})')
-        return v
-    
-    @validator('low')
-    def low_lte_open_close(cls, v, values):
-        """Ensure low <= open and close"""
-        if 'open' in values and v > values['open']:
-            raise ValueError(f'Low ({v}) must be <= Open ({values["open"]})')
-        if 'close' in values and v > values['close']:
-            raise ValueError(f'Low ({v}) must be <= Close ({values["close"]})')
-        return v
-    
+    @model_validator(mode='after')
+    def ohlc_consistent(self):
+        """Ensure low <= open, close <= high.
+
+        This runs after all fields are parsed. Per-field validators that read
+        `values` only see fields declared *before* them, so a check on `high`
+        could never see `low` or `close`, and a candle whose close sat outside
+        its high/low range used to be accepted.
+        """
+        if self.high < self.low:
+            raise ValueError(f'High ({self.high}) must be >= Low ({self.low})')
+        for name in ('open', 'close'):
+            price = getattr(self, name)
+            if price > self.high:
+                raise ValueError(f'High ({self.high}) must be >= {name.capitalize()} ({price})')
+            if price < self.low:
+                raise ValueError(f'Low ({self.low}) must be <= {name.capitalize()} ({price})')
+        return self
+
     @validator('open', 'high', 'low', 'close')
     def price_reasonable(cls, v):
         """Ensure price is within reasonable bounds (not NaN, Inf, or extreme values)"""
